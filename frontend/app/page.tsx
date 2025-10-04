@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Timer from '@/components/Timer'
 import Mascot from '@/components/Mascot'
 import SessionStats from '@/components/SessionStats'
+import SpotifyPlayer from '@/components/SpotifyPlayer'
 
 export default function Home() {
   const [sessionActive, setSessionActive] = useState(false)
@@ -20,17 +21,34 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Timer 
-              sessionActive={sessionActive}
-              setSessionActive={setSessionActive}
-            />
+        <div className="space-y-8">
+          {/* Top row: Timer and Session Stats */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <div className="lg:col-span-2">
+              <Timer
+                sessionActive={sessionActive}
+                setSessionActive={setSessionActive}
+              />
+            </div>
+            <div className="flex">
+              <div className="flex-1">
+                <SessionStats />
+              </div>
+            </div>
           </div>
-          
-          <div className="space-y-6">
-            <Mascot sessionActive={sessionActive} />
-            <SessionStats />
+
+          {/* Bottom row: Mascot and Spotify */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+            <div className="flex">
+              <div className="flex-1">
+                <Mascot sessionActive={sessionActive} />
+              </div>
+            </div>
+            <div className="lg:col-span-2 flex">
+              <div className="flex-1">
+                <SpotifyPlayer />
+              </div>
+            </div>
           </div>
         </div>
       </div>
