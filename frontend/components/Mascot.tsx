@@ -32,7 +32,7 @@ export default function Mascot({ sessionActive }: MascotProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col justify-center">
       <div className="text-center">
         <div className="text-8xl mb-4 animate-bounce">
           {getMascotEmoji()}

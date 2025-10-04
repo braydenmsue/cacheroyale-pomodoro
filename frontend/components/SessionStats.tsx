@@ -30,12 +30,12 @@ export default function SessionStats() {
   }, [])
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col">
       <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">
         📊 Session Stats
       </h3>
-      
-      <div className="space-y-4">
+
+      <div className="space-y-4 flex-1 flex flex-col justify-center">
         <div className="flex justify-between items-center">
           <span className="text-gray-600 dark:text-gray-400">Today's Sessions:</span>
           <span className="text-2xl font-bold text-primary">{stats.todaySessions}</span>
