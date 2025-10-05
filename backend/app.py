@@ -1,11 +1,12 @@
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room
 import sqlite3
 import uuid
 from datetime import datetime
 import os
 import sys
+import time
 
 # Add services to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'services'))
@@ -19,6 +20,8 @@ DATABASE = 'pomodoro.db'
 
 # Global tracker instance
 active_sessions = {}
+
+ALERT_THROTTLE_SECONDS = 8  # minimum seconds between alerts per session
 
 
 def get_db():
@@ -90,7 +93,8 @@ def start_tracking():
     tracker.start()
     active_sessions[session_id] = {
         'started_at': datetime.now().isoformat(),
-        'is_active': True
+        'is_active': True,
+        'last_alert': 0
     }
 
     return jsonify({
@@ -168,7 +172,7 @@ def end_session():
 
 @app.route('/api/eye_activity', methods=['POST'])
 def log_eye_activity():
-    """Log eye activity data"""
+    """Log eye activity data and emit an alert when unfocused + low focus rate."""
     data = request.json
     session_id = data.get('session_id')
     gaze_focused = data.get('gaze_focused', False)
@@ -185,11 +189,46 @@ def log_eye_activity():
         (session_id, timestamp, gaze_focused)
     )
     conn.commit()
+
+    # After inserting, compute current focus rate for the session
+    cursor.execute(
+        'SELECT COUNT(*) as total, SUM(CASE WHEN gaze_focused THEN 1 ELSE 0 END) as focused FROM eye_activity WHERE session_id = ?',
+        (session_id,)
+    )
+    activity_row = cursor.fetchone()
+    total = activity_row['total'] or 0
+    focused = activity_row['focused'] or 0
+
+    focus_rate = 0.0
+    if total > 0:
+        focus_rate = focused / total
+
+    # Ensure an active_sessions entry for throttling info
+    now_ts = time.time()
+    if session_id not in active_sessions:
+        active_sessions[session_id] = {
+            'started_at': datetime.now().isoformat(),
+            'is_active': True,
+            'last_alert': 0
+        }
+
+    # If current event is unfocused and overall focus rate is < 0.5, emit alert (throttled)
+    if (not gaze_focused) and (focus_rate < 0.5):
+        last_alert = active_sessions[session_id].get('last_alert', 0)
+        if (now_ts - last_alert) >= ALERT_THROTTLE_SECONDS:
+            active_sessions[session_id]['last_alert'] = now_ts
+            # emit to the session room so only clients tracking that session hear it
+            socketio.emit('unfocused_alert', {
+                'session_id': session_id,
+                'focus_rate': focus_rate
+            }, room=session_id)
+
     conn.close()
 
     return jsonify({
         'status': 'logged',
-        'timestamp': timestamp.isoformat()
+        'timestamp': timestamp.isoformat(),
+        'focus_rate': focus_rate
     })
 
 
@@ -231,6 +270,14 @@ def recommend_interval(session_id):
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'service': 'anti-brainrot-pomodoro-backend'})
+
+
+# Socket event: allow a client to join a session room
+@socketio.on('join_session')
+def handle_join_session(data):
+    sid = data.get('session_id')
+    if sid:
+        join_room(sid)
 
 
 if __name__ == '__main__':
