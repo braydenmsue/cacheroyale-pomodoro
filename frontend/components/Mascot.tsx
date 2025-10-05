@@ -45,6 +45,12 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
     }
   }, [health]);
 
+  useEffect(() => {
+    if (!sessionActive) {
+      setHealth(100);
+    }
+  }, [sessionActive]);
+
   const getMascotImg = () => {
     switch (mood) {
       case 'focused':
