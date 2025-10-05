@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { api } from '@/lib/api'
 
 interface Stats {
   totalSessions: number
@@ -22,19 +21,35 @@ export default function SessionStats() {
     bestFocusScore: 0
   })
 
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const res = await fetch("http://localhost:5000/api/stats", {
-          credentials: "include",
-        });
-        const data = await res.json();
-        setStats(data);
-      } catch (err) {
-        console.error("Failed to fetch stats:", err);
-      }
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/stats", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      setStats(data);
+      console.log("Stats updated:", data);
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
     }
+  }
+
+  useEffect(() => {
+    // Fetch stats on mount
     fetchStats();
+
+    // Listen for session completion events
+    const handleSessionComplete = () => {
+      console.log("Session complete event received, refreshing stats...");
+      fetchStats();
+    };
+
+    window.addEventListener('sessionComplete', handleSessionComplete);
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('sessionComplete', handleSessionComplete);
+    };
   }, []);
 
   return (
@@ -48,19 +63,19 @@ export default function SessionStats() {
           <span className="text-gray-600 dark:text-gray-400">Today's Sessions:</span>
           <span className="text-2xl font-bold text-primary">{stats.todaySessions}</span>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <span className="text-gray-600 dark:text-gray-400">Total Sessions:</span>
           <span className="text-2xl font-bold text-primary">{stats.totalSessions}</span>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <span className="text-gray-600 dark:text-gray-400">Focus Time:</span>
           <span className="text-2xl font-bold text-primary">
             {Math.round(stats.totalFocusTime / 60)}m
           </span>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <span className="text-gray-600 dark:text-gray-400">Avg Session:</span>
           <span className="text-2xl font-bold text-primary">{stats.averageSession}m</span>

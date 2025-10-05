@@ -41,6 +41,7 @@ export default function Timer({ sessionActive, isBreak, setSessionActive, onSess
     setIsRunning(false)
     if (!isBreak && sessionId) {
       try {
+        // End the session (this already saves it to the backend)
         const response = await api.endSession(sessionId)
         const breakTime = await api.getRecommendedInterval(sessionId)
         setRecommendedBreak(breakTime)
@@ -48,6 +49,10 @@ export default function Timer({ sessionActive, isBreak, setSessionActive, onSess
         onBreakChange?.(true)
         onPausedChange?.(true)
         showNotification('Time for a break!', `Take a ${Math.round(breakTime / 60)} minute break`)
+
+        window.dispatchEvent(new Event('sessionComplete'))
+        console.log("Session completed, stats will refresh")
+
       } catch (error) {
         console.error('Error ending session:', error)
         setTime(5 * 60)
@@ -59,10 +64,11 @@ export default function Timer({ sessionActive, isBreak, setSessionActive, onSess
       setSessionActive(false)
       onPausedChange?.(false)
       setSessionId(null)
-      onSessionIdChange?.(null)  // Notify parent
+      onSessionIdChange?.(null)
       showNotification('Break over!', 'Ready to focus again?')
     }
   }
+
 
   const startTimer = async () => {
     if (!isRunning) {
