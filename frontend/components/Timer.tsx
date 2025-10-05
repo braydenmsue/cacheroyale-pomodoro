@@ -45,6 +45,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
         setRecommendedBreak(breakTime)
         setTime(breakTime)
         setIsBreak(true)
+        onPausedChange?.(true)
         showNotification('Time for a break!', `Take a ${Math.round(breakTime / 60)} minute break`)
       } catch (error) {
         console.error('Error ending session:', error)
@@ -55,6 +56,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
       setIsBreak(false)
       setTime(25 * 60)
       setSessionActive(false)
+      onPausedChange?.(false)
       setSessionId(null)
       onSessionIdChange?.(null)  // Notify parent
       showNotification('Break over!', 'Ready to focus again?')
@@ -70,9 +72,12 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
           setSessionId(response.session_id)
           setSessionActive(true)
           onSessionIdChange?.(response.session_id)
+          onPausedChange?.(false)
+        }
+        else{
+        onPausedChange?.(true)
         }
         setIsRunning(true)
-        onPausedChange?.(false)
       } catch (error) {
         console.error('Error starting session:', error)
         setIsRunning(true)
@@ -83,6 +88,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
   const pauseTimer = () => {
     setIsRunning(false)
     onPausedChange?.(true)
+    setSessionActive(false)
   }
 
   const resetTimer = () => {

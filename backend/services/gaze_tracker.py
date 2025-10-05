@@ -28,14 +28,34 @@ class GazeTracker:
         self.LEFT_EYE = [362, 385, 387, 263, 373, 380]
         self.RIGHT_EYE = [33, 160, 158, 133, 153, 144]
 
+    # def start(self):
+    #     """Start the webcam"""
+    #     print("Starting webcam...")
+    #     if self.cap is None or not self.cap.isOpened():
+    #         self.cap = cv2.VideoCapture(0)
+    #         if not self.cap.isOpened():
+    #             print("ERROR: Could not open webcam!")
+    #             return False
+    #     self.is_running = True
+    #     print("Webcam started successfully")
+    #     return True
     def start(self):
-        """Start the webcam"""
         print("Starting webcam...")
         if self.cap is None or not self.cap.isOpened():
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
                 print("ERROR: Could not open webcam!")
                 return False
+
+        # Reinitialize FaceMesh if it was closed
+        if self.face_mesh is None:
+            self.face_mesh = self.mp_face_mesh.FaceMesh(
+                max_num_faces=1,
+                refine_landmarks=True,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5
+            )
+
         self.is_running = True
         print("Webcam started successfully")
         return True
@@ -47,6 +67,8 @@ class GazeTracker:
         if self.cap:
             self.cap.release()
             self.cap = None
+        cv2.destroyAllWindows()  # ensures all OpenCV resources are freed
+        time.sleep(0.5)
         print("Webcam stopped")
 
     def detect_gaze_focus(self, face_landmarks, img_w, img_h):
@@ -112,7 +134,7 @@ class GazeTracker:
             left_horizontal_ratio = left_horizontal_offset / left_eye_width if left_eye_width > 0 else 0
             right_horizontal_ratio = right_horizontal_offset / right_eye_width if right_eye_width > 0 else 0
 
-            horizontal_threshold = 0.15  # 15% of eye width
+            horizontal_threshold = 0.18  # 18% of eye width
             horizontal_focused = (left_horizontal_ratio < horizontal_threshold and
                                   right_horizontal_ratio < horizontal_threshold)
 
@@ -126,18 +148,23 @@ class GazeTracker:
             right_vertical_ratio = right_iris_from_top / right_eye_height if right_eye_height > 0 else 0.5
 
             # Average vertical position (more stable than individual eyes)
-            avg_vertical_ratio = (left_vertical_ratio + right_vertical_ratio) / 2
+            if (left_eye_height + right_eye_height)/2 < 0.0015:
+                avg_vertical_ratio = 0
+            else:
+                avg_vertical_ratio = (left_vertical_ratio + right_vertical_ratio) / 2
 
             # vertical thresholds:
             # < 0.20: Looking straight up
             # 0.20-0.75: Looking forward
             # > 0.75: Looking down around phone level
             vertical_min = 0.20
-            vertical_max = 0.75
+            vertical_max = 0.65
 
             vertical_focused = (vertical_min < avg_vertical_ratio < vertical_max)
 
-            if avg_vertical_ratio < 0 or avg_vertical_ratio > 1:
+            if avg_vertical_ratio == 0:
+                focused = False # eyes are closed
+            elif avg_vertical_ratio < 0 or avg_vertical_ratio > 1:
                 focused = horizontal_focused
             else:
                 focused = horizontal_focused and vertical_focused
@@ -228,7 +255,7 @@ class GazeTracker:
                 self.last_check_time = current_time
 
             # Add overlay
-            status_text = "FOCUSED ✓" if is_focused else "NOT FOCUSED ✗"
+            status_text = "FOCUSED" if is_focused else "NOT FOCUSED"
             status_color = (0, 255, 0) if is_focused else (0, 0, 255)
             cv2.putText(frame, status_text, (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2)

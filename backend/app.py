@@ -26,9 +26,9 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 
 CORS(app,
      supports_credentials=True,
-     origins=['http://127.0.0.1:3000'],
-     allow_headers=['Content-Type'],
-     expose_headers=['Set-Cookie'])
+     origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+     allow_headers=["Content-Type"],
+     expose_headers=["Set-Cookie"])
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Spotify OAuth configuration

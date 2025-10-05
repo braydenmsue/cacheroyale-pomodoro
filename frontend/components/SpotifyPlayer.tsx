@@ -19,6 +19,7 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
   const [playlistSearchQuery, setPlaylistSearchQuery] = useState('')
   const [selectedPlaylist, setSelectedPlaylist] = useState<any>(null)
   const [playlistTracks, setPlaylistTracks] = useState<any[]>([])
+  const [currentPlayingPlaylist, setCurrentPlayingPlaylist] = useState<any>(null)
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -91,8 +92,10 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
       )
 
       const data = await response.json()
-      if (data.playlists?.items?.[0]?.uri) {
-        setUris([data.playlists.items[0].uri])
+      if (data.playlists?.items?.[0]) {
+        const playlist = data.playlists.items[0]
+        setUris([playlist.uri])
+        setCurrentPlayingPlaylist(playlist)
       }
     } catch (error) {
       console.error('Error loading playlist:', error)
@@ -124,7 +127,7 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
     }
   }
 
-  const playTrack = (uri: string) => {
+  const playTrack = (uri: string, fromPlaylist?: any) => {
     setUris([uri])
     setShowSearch(false)
     setSearchQuery('')
@@ -132,6 +135,7 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
     setShowPlaylists(false)
     setSelectedPlaylist(null)
     setPlaylistTracks([])
+    setCurrentPlayingPlaylist(fromPlaylist || null)
   }
 
   const fetchUserPlaylists = async () => {
@@ -180,12 +184,13 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
     fetchPlaylistTracks(playlist.id)
   }
 
-  const playPlaylist = (uri: string) => {
-    setUris([uri])
+  const playPlaylist = (playlist: any) => {
+    setUris([playlist.uri])
     setShowPlaylists(false)
     setPlaylistSearchQuery('')
     setSelectedPlaylist(null)
     setPlaylistTracks([])
+    setCurrentPlayingPlaylist(playlist)
   }
 
   const backToPlaylists = () => {
@@ -295,7 +300,7 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
                       </div>
                     </button>
                     <button
-                      onClick={() => playPlaylist(playlist.uri)}
+                      onClick={() => playPlaylist(playlist)}
                       className="px-3 py-2 text-green-500 hover:text-green-600 text-xl"
                       title="Play all"
                     >
@@ -331,7 +336,7 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
                 item.track && (
                   <button
                     key={item.track.id}
-                    onClick={() => playTrack(item.track.uri)}
+                    onClick={() => playTrack(item.track.uri, selectedPlaylist)}
                     className="w-full px-3 py-2 text-left hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2 border-b border-gray-200 dark:border-gray-600 last:border-b-0"
                   >
                     {item.track.album.images[2] && (
@@ -403,19 +408,41 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
         </div>
       )}
 
-      <div className={`spotify-player-wrapper flex-1 flex items-center ${!showSearch && !showPlaylists ? 'justify-center' : ''}`}>
+      <div className={`spotify-player-wrapper flex-1 flex flex-col ${!showSearch && !showPlaylists ? 'justify-center' : ''}`}>
         <div className="w-full">
+          {currentPlayingPlaylist && (
+            <div className="mb-2 flex items-center gap-2 px-1">
+              {currentPlayingPlaylist.images?.[0] && (
+                <img
+                  src={currentPlayingPlaylist.images[0].url}
+                  alt={currentPlayingPlaylist.name}
+                  className="w-10 h-10 rounded"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-gray-500 dark:text-gray-400">Playing from playlist</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                  {currentPlayingPlaylist.name}
+                </div>
+              </div>
+            </div>
+          )}
           <SpotifyWebPlayback
             token={token}
             uris={uris}
+            play={true}
+            initialVolume={0.5}
             styles={{
               activeColor: '#6366f1',
               bgColor: 'transparent',
               color: '#9ca3af',
               loaderColor: '#6366f1',
               sliderColor: '#6366f1',
+              sliderHandleColor: '#6366f1',
               trackArtistColor: '#9ca3af',
               trackNameColor: '#d1d5db',
+              sliderTrackColor: '#4b5563',
+              sliderHeight: 6,
             }}
             magnifySliderOnHover={true}
           />
