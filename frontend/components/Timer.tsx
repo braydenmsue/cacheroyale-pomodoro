@@ -126,6 +126,10 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
       Notification.requestPermission()
     }
   }, [])
+  useEffect(() => {
+      document.title = `${formatTime(time)} - ${isBreak ? 'Break' : 'Focus'}`
+
+  }, [time, isBreak])
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
