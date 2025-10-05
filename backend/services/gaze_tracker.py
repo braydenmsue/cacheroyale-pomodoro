@@ -52,10 +52,11 @@ class GazeTracker:
     def detect_gaze_focus(self, face_landmarks, img_w, img_h):
         """
         Detect if user is looking at screen based on iris position
+        Uses eye corners for horizontal and eyelids for vertical detection
         Returns: True if focused, False otherwise
         """
         try:
-            # Get iris positions
+            # Get iris centers
             left_iris_coords = []
             for idx in self.LEFT_IRIS:
                 landmark = face_landmarks.landmark[idx]
@@ -73,7 +74,18 @@ class GazeTracker:
             left_iris_center = np.mean(left_iris_coords, axis=0)
             right_iris_center = np.mean(right_iris_coords, axis=0)
 
-            # Get eye boundaries
+            # left_inner = face_landmarks.landmark[133]
+            # left_outer = face_landmarks.landmark[33]
+            # right_inner = face_landmarks.landmark[362]
+            # right_outer = face_landmarks.landmark[263]
+
+            # Get eyelid landmarks for VERTICAL gaze
+            left_top = face_landmarks.landmark[159]
+            left_bottom = face_landmarks.landmark[145]
+            right_top = face_landmarks.landmark[386]
+            right_bottom = face_landmarks.landmark[374]
+
+            # --- HORIZONTAL DETECTION (left/right) ---
             left_eye_coords = []
             for idx in self.LEFT_EYE:
                 landmark = face_landmarks.landmark[idx]
@@ -84,17 +96,50 @@ class GazeTracker:
                 landmark = face_landmarks.landmark[idx]
                 right_eye_coords.append([landmark.x, landmark.y])
 
-            # Calculate if iris is centered (looking at screen)
+            # eye centers
             left_eye_center = np.mean(left_eye_coords, axis=0)
             right_eye_center = np.mean(right_eye_coords, axis=0)
 
-            # Calculate distance from iris to eye center
-            left_distance = np.linalg.norm(left_iris_center - left_eye_center)
-            right_distance = np.linalg.norm(right_iris_center - right_eye_center)
+            # eye widths (max - min x coordinate)
+            left_eye_width = max([c[0] for c in left_eye_coords]) - min([c[0] for c in left_eye_coords])
+            right_eye_width = max([c[0] for c in right_eye_coords]) - min([c[0] for c in right_eye_coords])
 
-            # If both irises are relatively centered, user is focused
-            threshold = 0.008  # Adjust based on testing
-            return left_distance < threshold and right_distance < threshold
+            # Horizontal offset from eye center
+            left_horizontal_offset = abs(left_iris_center[0] - left_eye_center[0])
+            right_horizontal_offset = abs(right_iris_center[0] - right_eye_center[0])
+
+            # convert to ratio & normalize
+            left_horizontal_ratio = left_horizontal_offset / left_eye_width if left_eye_width > 0 else 0
+            right_horizontal_ratio = right_horizontal_offset / right_eye_width if right_eye_width > 0 else 0
+
+            horizontal_threshold = 0.15  # 15% of eye width
+            horizontal_focused = (left_horizontal_ratio < horizontal_threshold and
+                                  right_horizontal_ratio < horizontal_threshold)
+
+            # --- VERTICAL DETECTION (up/down) ---
+            left_eye_height = abs(left_top.y - left_bottom.y)
+            left_iris_from_top = abs(left_iris_center[1] - left_top.y)
+            left_vertical_ratio = left_iris_from_top / left_eye_height if left_eye_height > 0 else 0.5
+
+            right_eye_height = abs(right_top.y - right_bottom.y)
+            right_iris_from_top = abs(right_iris_center[1] - right_top.y)
+            right_vertical_ratio = right_iris_from_top / right_eye_height if right_eye_height > 0 else 0.5
+
+            # Average vertical position (more stable than individual eyes)
+            avg_vertical_ratio = (left_vertical_ratio + right_vertical_ratio) / 2
+
+            # vertical thresholds:
+            # < 0.20: Looking straight up
+            # 0.20-0.75: Looking forward
+            # > 0.75: Looking down around phone level
+            vertical_min = 0.20
+            vertical_max = 0.75
+
+            vertical_focused = (vertical_min < avg_vertical_ratio < vertical_max)
+
+            focused = horizontal_focused and vertical_focused
+
+            return focused
 
         except Exception as e:
             print(f"Error detecting gaze: {e}")
