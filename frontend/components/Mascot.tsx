@@ -63,9 +63,20 @@ export default function Mascot({ sessionActive, isFocused, isPaused, isBreak }: 
 
   useEffect(() => {
     if (health === 0) {
-      alert('Mascot died! Restarting the timer...');
-      // Logic to restart the timer
-      setHealth(100); // Reset health
+      // Play the ACTUAL iPhone alarm sound from public folder
+      const audio = new Audio('/alarm.wav');
+      audio.volume = 1.0;
+
+      audio.play()
+        .then(() => console.log('Alarm playing!'))
+        .catch(err => console.error('Error playing alarm:', err));
+
+      setTimeout(() => {
+        audio.pause();
+        audio.currentTime = 0;
+        alert('Mascot died! Restarting the timer...');
+        setHealth(100);
+      }, 3000);
     }
   }, [health]);
 

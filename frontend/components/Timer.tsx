@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '@/lib/api'
 import { formatTime } from '@/utils/time'
+import confetti from 'canvas-confetti'
 
 interface TimerProps {
   sessionActive: boolean
@@ -37,17 +38,87 @@ export default function Timer({ sessionActive, isBreak, setSessionActive, onSess
     }
   }, [isRunning, time])
 
+  const celebrateCompletion = () => {
+    // MASSIVE confetti explosion!
+    const duration = 5000;
+    const animationEnd = Date.now() + duration;
+    const defaults = {
+      startVelocity: 45,
+      spread: 360,
+      ticks: 100,
+      zIndex: 9999,
+      gravity: 1.2,
+      decay: 0.94,
+      scalar: 1.5, // Bigger confetti pieces
+      shapes: ['circle', 'square'] as ('circle' | 'square')[],
+      colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#ff1493']
+    };
+
+    const randomInRange = (min: number, max: number) => {
+      return Math.random() * (max - min) + min;
+    };
+
+    // Initial HUGE burst from center
+    confetti({
+      ...defaults,
+      particleCount: 200,
+      spread: 180,
+      origin: { y: 0.6 }
+    });
+
+    // Continuous side bursts
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 100 * (timeLeft / duration);
+
+      // Left side burst
+      confetti({
+        ...defaults,
+        particleCount,
+        angle: 60,
+        spread: 100,
+        origin: { x: 0, y: 0.6 }
+      });
+
+      // Right side burst
+      confetti({
+        ...defaults,
+        particleCount,
+        angle: 120,
+        spread: 100,
+        origin: { x: 1, y: 0.6 }
+      });
+
+      // Top center burst
+      confetti({
+        ...defaults,
+        particleCount: particleCount / 2,
+        spread: 180,
+        origin: { x: 0.5, y: 0.2 }
+      });
+    }, 150);
+  };
+
   const handleTimerComplete = async () => {
     setIsRunning(false)
     if (!isBreak && sessionId) {
       try {
         // End the session (this already saves it to the backend)
-        const response = await api.endSession(sessionId)
+        await api.endSession(sessionId)
         const breakTime = await api.getRecommendedInterval(sessionId)
         setRecommendedBreak(breakTime)
         setTime(breakTime)
         onBreakChange?.(true)
         onPausedChange?.(true)
+
+        // 🎉 CELEBRATE! User completed the session!
+        celebrateCompletion()
+
         showNotification('Time for a break!', `Take a ${Math.round(breakTime / 60)} minute break`)
 
         window.dispatchEvent(new Event('sessionComplete'))
