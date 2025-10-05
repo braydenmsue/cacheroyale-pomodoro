@@ -89,29 +89,24 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
       <h1 className="text-2xl font-bold mb-2 text-gray-700 dark:text-gray-200">
         Meet Yumi!
       </h1>
-      <img src={infoButton.src}
+      {!sessionActive && (
+        <img src={infoButton.src}
         alt="info"
         className="w-6 h-6 mb-2 cursor-pointer"
         onClick={toggleInfoBubble}/>
+      )}
+      {showInfo && !sessionActive && (
+        <div className="absolute">
+          <InfoBubble>
+            {PetDescription}
+          </InfoBubble>
+        </div>
+      )}
       <img 
         src={getMascotImg()} 
         alt="mascot" 
         className="border w-full mb-4 rounded-lg" 
       />
-      {(!sessionActive || isPaused) && showInfo && (
-          <div
-            className="absolute z-20"
-            style={{
-            left: '54%',
-            top: '30%',
-            transform: 'translate(-10%, -100%)', // a bit up/left from the mouth
-          }}
-        >
-          <InfoBubble>
-            <p>{PetDescription}</p>
-          </InfoBubble>
-        </div>
-      )}
       <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
         {message}
       </p>
