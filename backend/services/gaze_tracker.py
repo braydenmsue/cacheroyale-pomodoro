@@ -220,7 +220,7 @@ class GazeTracker:
                     y = int(landmark.y * img_h)
                     cv2.circle(frame, (x, y), 1, (255, 0, 0), -1)
 
-            # Check if we should send update (every 5 seconds)
+            # Check if we should send update (every second)
             current_time = time.time()
             if current_time - self.last_check_time >= 1:
                 self.total_checks += 1
@@ -235,6 +235,7 @@ class GazeTracker:
                     'focus_percentage': float(focus_percentage),
                     'timestamp': datetime.now().isoformat()
                 })
+
 
                 print(f"Gaze update: focused={is_focused}, percentage={focus_percentage:.1f}%")
 
