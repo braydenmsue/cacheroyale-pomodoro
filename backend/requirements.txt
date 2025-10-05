@@ -1,3 +1,8 @@
 Flask==3.0.0
 Flask-CORS==4.0.0
+Flask-SocketIO==5.3.5
 python-dotenv==1.0.0
+mediapipe==0.10.9
+opencv-python==4.8.1.78
+numpy==1.24.3
+python-socketio==5.10.0
