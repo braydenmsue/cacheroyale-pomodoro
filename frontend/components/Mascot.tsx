@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import focusedMascot from '../assets/capoo-capoo-type-transparent.gif'
 import happyMascot from '../assets/happy-capoo.gif'
 import tiredMascot from '../assets/tired-capoo.gif'
+import InfoBubble from './InfoBubble'
+import infoButton from '../assets/info.png'
+import { PetDescription } from '../lib/constants'
 
 interface MascotProps {
   sessionActive: boolean
@@ -15,10 +18,15 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
   const [mood, setMood] = useState<'happy' | 'focused' | 'tired'>('happy')
   const [message, setMessage] = useState('Ready to work!')
   const [health, setHealth] = useState(100)
+  const [showInfo, setShowInfo] = useState(false)
 
   // Can adjust these values for difficulty
   const damageAmount = 10;
   const healAmount = 5;
+
+  const toggleInfoBubble = () => {
+    setShowInfo((prev) => !prev)
+  }
 
   useEffect(() => {
     let healthInterval: NodeJS.Timeout;
@@ -68,7 +76,7 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
       setMessage('You\'re doing great! Stay focused!')
     } else if (health < 50 && sessionActive) {
       setMood('tired')
-      setMessage('Stay focused, you can do it!')
+      setMessage('I\'m crashing out a little.... focus up!')
     }
     else {
       setMood('happy')
@@ -78,10 +86,26 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col justify-center items-center text-center">
+      <h1 className="text-2xl font-bold mb-2 text-gray-700 dark:text-gray-200">
+        Meet Yumi!
+      </h1>
+      {!sessionActive && (
+        <img src={infoButton.src}
+        alt="info"
+        className="w-6 h-6 mb-2 cursor-pointer"
+        onClick={toggleInfoBubble}/>
+      )}
+      {showInfo && !sessionActive && (
+        <div className="absolute">
+          <InfoBubble>
+            {PetDescription}
+          </InfoBubble>
+        </div>
+      )}
       <img 
         src={getMascotImg()} 
         alt="mascot" 
-        className="border w-full mb-4 hover:animate-bounce" 
+        className="border w-full mb-4 rounded-lg" 
       />
       <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
         {message}
