@@ -124,8 +124,6 @@ cacheroyale-pomodoro/ \
 - Custom companion skins and animations  
 - Focus streaks and rewards system  
 - Integration with calendar apps for smarter scheduling
+- Donating users' money to charity upon failed sessions
 
----
-
-## 📁 Project Structure
 
