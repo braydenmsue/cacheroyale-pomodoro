@@ -118,7 +118,7 @@ export default function EyeTracking({ sessionId, isActive, isPaused, onFocusChan
 
       {isPaused && (
         <div className="mb-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg text-center">
-          ⏸️ Tracking paused - Resume timer to continue
+          Tracking will resume when session is active
         </div>
       )}
 
