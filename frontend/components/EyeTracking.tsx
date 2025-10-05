@@ -47,22 +47,16 @@ export default function EyeTracking({ sessionId, isActive, isPaused, onFocusChan
     }
   }, [])
 
-  useEffect(() => {
-    console.log('🔄 EyeTracking useEffect triggered:', {
-      isActive,
-      sessionId,
-      trackingActive,
-      isPaused
-    })
+    useEffect(() => {
+      if (!sessionId) return
 
-    if (isActive && sessionId && !trackingActive && !isPaused) {
-      console.log('✅ Starting tracking...')
-      startTracking()
-    } else if ((!isActive || isPaused) && trackingActive) {  // MODIFIED THIS LINE
-      console.log('⏹️ Stopping tracking...')
-      stopTracking()
-    }
-  }, [isActive, sessionId, isPaused])  // ADD isPaused to dependencies
+      if (isActive && !isPaused) {
+        startTracking()
+      } else {
+        stopTracking()
+      }
+    }, [isActive, sessionId, isPaused])
+
 
   const startTracking = async () => {
     if (!sessionId) {
