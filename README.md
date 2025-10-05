@@ -91,48 +91,26 @@ npm run dev
 
 ---
 
-## 🔮 Future Ideas
-
-- User accounts + cloud sync  
-- Mobile companion app  
-- Personalized ML-driven break recommendations  
-- Spotify integration for focus music  
-- Team/collaboration features  
-- Custom companion skins and animations  
-- Focus streaks and rewards system  
-- Integration with calendar apps for smarter scheduling
-
----
-
 ## 📁 Project Structure
-cacheroyale-pomodoro/
-├── backend/
-│ ├── services/
-│ │ ├── init.py
-│ │ └── gaze_tracker.py
-│ ├── app.py
-│ ├── pomodoro.db
-│ └── requirements.txt
-├── frontend/
-│ ├── app/
-│ │ ├── globals.css
-│ │ ├── layout.tsx
-│ │ └── page.tsx
-│ └── components/
-│ ├── EyeTracking.tsx
-│ ├── Mascot.tsx
-│ ├── SessionStats.tsx
-│ └── SpotifyPlayer.tsx
-└── README.md
-
-## 🧠 How Adaptive Breaks Work
-
-- **80%+ Focus:** 3-minute break (you’re on fire!)  
-- **60–80% Focus:** 5-minute break (steady)  
-- **40–60% Focus:** 7-minute break (take it easy)  
-- **<40% Focus:** 10-minute break (time for a reset)
-
-> Keep an eye on your companion — if it dies, your Pomodoro timer resets.
+cacheroyale-pomodoro/ \
+├── backend/ \
+│ ├── services/ \
+│ │ ├── init.py \
+│ │ └── gaze_tracker.py \
+│ ├── app.py \
+│ ├── pomodoro.db \
+│ └── requirements.txt \
+├── frontend/ \
+│ ├── app/ \
+│ │ ├── globals.css \
+│ │ ├── layout.tsx \
+│ │ └── page.tsx \
+│ └── components/ \
+│ ├── EyeTracking.tsx \
+│ ├── Mascot.tsx \
+│ ├── SessionStats.tsx \
+│ └── SpotifyPlayer.tsx \
+└── README.md \
 
 ---
 
