@@ -23,6 +23,9 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
   // Can adjust these values for difficulty
   const damageAmount = 10;
   const healAmount = 5;
+  const gracePeriod = 3000; // 3 seconds
+
+  let unfocusedTimer: NodeJS.Timeout | null = null;
 
   const toggleInfoBubble = () => {
     setShowInfo((prev) => !prev)
@@ -32,17 +35,29 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
     let healthInterval: NodeJS.Timeout;
 
     if (sessionActive && !isPaused) {
+
       if (isFocused) {
+        if (unfocusedTimer) {
+          clearTimeout(unfocusedTimer);
+          unfocusedTimer = null;
+        }
         healthInterval = setInterval(() => {
           setHealth((prev) => Math.min(prev + healAmount, 100));
         }, 1000)
       } else {
-        healthInterval = setInterval(() => {
-          setHealth((prev) => Math.max(prev - damageAmount, 0));
-        }, 1000)
+        if (!unfocusedTimer) {
+          unfocusedTimer = setTimeout(() => {
+            healthInterval = setInterval(() => {
+              setHealth((prev) => Math.max(prev - damageAmount, 0));
+            }, 1000)
+          }, gracePeriod)
+        }
       }
     }
-    return () => clearInterval(healthInterval)
+    return () => {
+      clearInterval(healthInterval);
+      if (unfocusedTimer) clearTimeout(unfocusedTimer);
+    }
   }, [sessionActive, isFocused, isPaused])
 
   useEffect(() => {
@@ -87,7 +102,7 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col justify-center items-center text-center">
       <h1 className="text-2xl font-bold mb-2 text-gray-700 dark:text-gray-200">
-        Meet Yumi!
+        Meet Pomi!
       </h1>
       {!sessionActive && (
         <img src={infoButton.src}
@@ -115,9 +130,11 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
       </div>
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-10 mb-10">
         <div 
-          className={`h-10 rounded-full transition-all duration-500 ease-in-out ${health > 50 ? 'bg-green-500' : health > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} 
+          className={`flex items-center justify-center h-10 rounded-full transition-all duration-500 ease-in-out ${health > 50 ? 'bg-green-500' : health > 20 ? 'bg-yellow-500' : 'bg-red-500'}`} 
           style={{ width: `${health}%` }} 
-        />
+        >
+          <span className="text-white font-bold">{health}%</span>
+        </div>
       </div>
     </div>
   )
