@@ -5,27 +5,7 @@ import SpotifyWebPlayback from 'react-spotify-web-playback'
 
 interface SpotifyPlayerProps {}
 
-// PKCE helper functions
-const generateRandomString = (length: number) => {
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  const values = crypto.getRandomValues(new Uint8Array(length))
-  return values.reduce((acc, x) => acc + possible[x % possible.length], '')
-}
-
-const sha256 = async (plain: string) => {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(plain)
-  return window.crypto.subtle.digest('SHA-256', data)
-}
-
-const base64encode = (input: ArrayBuffer) => {
-  const uint8Array = new Uint8Array(input)
-  const charArray = Array.from(uint8Array, byte => String.fromCharCode(byte))
-  return btoa(charArray.join(''))
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export default function SpotifyPlayer({}: SpotifyPlayerProps) {
   const [token, setToken] = useState('')
@@ -40,94 +20,60 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
   const [selectedPlaylist, setSelectedPlaylist] = useState<any>(null)
   const [playlistTracks, setPlaylistTracks] = useState<any[]>([])
 
-  // Get Spotify client ID from environment
-  const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || ''
-  // Spotify requires http://127.0.0.1 for local development (not localhost)
-  const REDIRECT_URI = typeof window !== 'undefined'
-    ? window.location.origin.replace('localhost', '127.0.0.1')
-    : ''
-
   useEffect(() => {
-    // Check for authorization code in URL (from Spotify redirect)
-    const urlParams = new URLSearchParams(window.location.search)
-    const code = urlParams.get('code')
+    const checkAuth = async () => {
+      // Check if redirected back from Spotify with success
+      const urlParams = new URLSearchParams(window.location.search)
+      const spotifyAuth = urlParams.get('spotify_auth')
+      const spotifyError = urlParams.get('spotify_error')
 
-    if (code) {
-      // Exchange code for token
-      const codeVerifier = sessionStorage.getItem('code_verifier')
-      if (codeVerifier) {
-        exchangeCodeForToken(code, codeVerifier)
+      if (spotifyError) {
+        console.error('Spotify auth error:', spotifyError)
+        window.history.replaceState({}, document.title, window.location.pathname)
+        return
+      }
+
+      if (spotifyAuth === 'success') {
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname)
       }
-    } else {
-      // Check if token exists in sessionStorage
-      const storedToken = sessionStorage.getItem('spotify_token')
-      if (storedToken) {
-        setToken(storedToken)
-        setIsAuthenticated(true)
+
+      // Try to get token from backend
+      try {
+        const response = await fetch(`${API_URL}/api/spotify/token`, {
+          credentials: 'include',
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setToken(data.access_token)
+          setIsAuthenticated(true)
+        }
+      } catch (error) {
+        console.error('Error fetching token:', error)
       }
     }
+
+    checkAuth()
   }, [])
 
-  const exchangeCodeForToken = async (code: string, codeVerifier: string) => {
-    const params = new URLSearchParams({
-      client_id: SPOTIFY_CLIENT_ID,
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: REDIRECT_URI,
-      code_verifier: codeVerifier,
-    })
+  const handleSpotifyLogin = () => {
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${API_URL}/api/spotify/login`
+  }
 
+  const handleLogout = async () => {
     try {
-      const response = await fetch('https://accounts.spotify.com/api/token', {
+      await fetch(`${API_URL}/api/spotify/logout`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params,
+        credentials: 'include',
       })
-
-      const data = await response.json()
-      if (data.access_token) {
-        setToken(data.access_token)
-        setIsAuthenticated(true)
-        sessionStorage.setItem('spotify_token', data.access_token)
-        sessionStorage.removeItem('code_verifier')
-      }
     } catch (error) {
-      console.error('Error exchanging code for token:', error)
+      console.error('Error logging out:', error)
     }
-  }
 
-
-  const handleSpotifyLogin = async () => {
-    const codeVerifier = generateRandomString(64)
-    const hashed = await sha256(codeVerifier)
-    const codeChallenge = base64encode(hashed)
-
-    // Store code verifier for later use
-    sessionStorage.setItem('code_verifier', codeVerifier)
-
-    const scopes = [
-      'streaming',
-      'user-read-email',
-      'user-read-private',
-      'user-read-playback-state',
-      'user-modify-playback-state',
-    ]
-
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${SPOTIFY_CLIENT_ID}&redirect_uri=${encodeURIComponent(
-      REDIRECT_URI
-    )}&scope=${encodeURIComponent(scopes.join(' '))}&response_type=code&code_challenge_method=S256&code_challenge=${codeChallenge}`
-
-    window.location.href = authUrl
-  }
-
-  const handleLogout = () => {
     setToken('')
     setIsAuthenticated(false)
-    sessionStorage.removeItem('spotify_token')
   }
 
   const loadFocusPlaylist = async () => {
@@ -255,10 +201,6 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
       fetchUserPlaylists()
     }
   }, [isAuthenticated])
-
-  if (!SPOTIFY_CLIENT_ID) {
-    return null
-  }
 
   if (!isAuthenticated) {
     return (
@@ -461,21 +403,23 @@ export default function SpotifyPlayer({}: SpotifyPlayerProps) {
         </div>
       )}
 
-      <div className={`spotify-player-wrapper flex-1 ${!showSearch && !showPlaylists ? 'mt-12' : ''}`}>
-        <SpotifyWebPlayback
-          token={token}
-          uris={uris}
-          styles={{
-            activeColor: '#6366f1',
-            bgColor: 'transparent',
-            color: '#9ca3af',
-            loaderColor: '#6366f1',
-            sliderColor: '#6366f1',
-            trackArtistColor: '#9ca3af',
-            trackNameColor: '#d1d5db',
-          }}
-          magnifySliderOnHover={true}
-        />
+      <div className={`spotify-player-wrapper flex-1 flex items-center ${!showSearch && !showPlaylists ? 'justify-center' : ''}`}>
+        <div className="w-full">
+          <SpotifyWebPlayback
+            token={token}
+            uris={uris}
+            styles={{
+              activeColor: '#6366f1',
+              bgColor: 'transparent',
+              color: '#9ca3af',
+              loaderColor: '#6366f1',
+              sliderColor: '#6366f1',
+              trackArtistColor: '#9ca3af',
+              trackNameColor: '#d1d5db',
+            }}
+            magnifySliderOnHover={true}
+          />
+        </div>
       </div>
     </div>
   )
