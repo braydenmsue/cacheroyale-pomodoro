@@ -13,7 +13,6 @@ class GazeTracker:
         self.focused_count = 0
         self.total_checks = 0
 
-        # MediaPipe setup
         self.mp_face_mesh = mp.solutions.face_mesh
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             max_num_faces=1,
@@ -28,17 +27,6 @@ class GazeTracker:
         self.LEFT_EYE = [362, 385, 387, 263, 373, 380]
         self.RIGHT_EYE = [33, 160, 158, 133, 153, 144]
 
-    # def start(self):
-    #     """Start the webcam"""
-    #     print("Starting webcam...")
-    #     if self.cap is None or not self.cap.isOpened():
-    #         self.cap = cv2.VideoCapture(0)
-    #         if not self.cap.isOpened():
-    #             print("ERROR: Could not open webcam!")
-    #             return False
-    #     self.is_running = True
-    #     print("Webcam started successfully")
-    #     return True
     def start(self):
         print("Starting webcam...")
         if self.cap is None or not self.cap.isOpened():
@@ -62,23 +50,24 @@ class GazeTracker:
 
     def stop(self):
         """Stop the webcam"""
+        if not self.is_running:
+            return
         print("Stopping webcam...")
-        self.is_running = False
+
         if self.cap:
             self.cap.release()
             self.cap = None
-        cv2.destroyAllWindows()  # ensures all OpenCV resources are freed
+        self.is_running = False
+
+        cv2.destroyAllWindows()
         time.sleep(0.5)
         print("Webcam stopped")
 
     def detect_gaze_focus(self, face_landmarks, img_w, img_h):
         """
-        Detect if user is looking at screen based on iris position
-        Uses eye corners for horizontal and eyelids for vertical detection
-        Returns: True if focused, False otherwise
+        Detect if user is looking at screen based on pupil position
         """
         try:
-            # Get iris centers
             left_iris_coords = []
             for idx in self.LEFT_IRIS:
                 landmark = face_landmarks.landmark[idx]
@@ -92,14 +81,14 @@ class GazeTracker:
             if not left_iris_coords or not right_iris_coords:
                 return False
 
-            # Calculate iris centers
+            # iris centers
             left_iris_center = np.mean(left_iris_coords, axis=0)
             right_iris_center = np.mean(right_iris_coords, axis=0)
 
-            # left_inner = face_landmarks.landmark[133]
-            # left_outer = face_landmarks.landmark[33]
-            # right_inner = face_landmarks.landmark[362]
-            # right_outer = face_landmarks.landmark[263]
+            left_inner = face_landmarks.landmark[133]
+            left_outer = face_landmarks.landmark[33]
+            right_inner = face_landmarks.landmark[362]
+            right_outer = face_landmarks.landmark[263]
 
             # Get eyelid landmarks for VERTICAL gaze
             left_top = face_landmarks.landmark[159]
@@ -107,7 +96,7 @@ class GazeTracker:
             right_top = face_landmarks.landmark[386]
             right_bottom = face_landmarks.landmark[374]
 
-            # --- HORIZONTAL DETECTION (left/right) ---
+            # horizontal
             left_eye_coords = []
             for idx in self.LEFT_EYE:
                 landmark = face_landmarks.landmark[idx]
@@ -122,11 +111,10 @@ class GazeTracker:
             left_eye_center = np.mean(left_eye_coords, axis=0)
             right_eye_center = np.mean(right_eye_coords, axis=0)
 
-            # eye widths (max - min x coordinate)
+            # eye widths
             left_eye_width = max([c[0] for c in left_eye_coords]) - min([c[0] for c in left_eye_coords])
             right_eye_width = max([c[0] for c in right_eye_coords]) - min([c[0] for c in right_eye_coords])
 
-            # Horizontal offset from eye center
             left_horizontal_offset = abs(left_iris_center[0] - left_eye_center[0])
             right_horizontal_offset = abs(right_iris_center[0] - right_eye_center[0])
 
@@ -138,7 +126,6 @@ class GazeTracker:
             horizontal_focused = (left_horizontal_ratio < horizontal_threshold and
                                   right_horizontal_ratio < horizontal_threshold)
 
-            # --- VERTICAL DETECTION (up/down) ---
             left_eye_height = abs(left_top.y - left_bottom.y)
             left_iris_from_top = abs(left_iris_center[1] - left_top.y)
             left_vertical_ratio = left_iris_from_top / left_eye_height if left_eye_height > 0 else 0.5
@@ -147,7 +134,6 @@ class GazeTracker:
             right_iris_from_top = abs(right_iris_center[1] - right_top.y)
             right_vertical_ratio = right_iris_from_top / right_eye_height if right_eye_height > 0 else 0.5
 
-            # Average vertical position (more stable than individual eyes)
             if (left_eye_height + right_eye_height)/2 < 0.0015:
                 avg_vertical_ratio = 0
             else:
@@ -158,7 +144,7 @@ class GazeTracker:
             # 0.20-0.75: Looking forward
             # > 0.75: Looking down around phone level
             vertical_min = 0.20
-            vertical_max = 0.65
+            vertical_max = 0.85
 
             vertical_focused = (vertical_min < avg_vertical_ratio < vertical_max)
 
