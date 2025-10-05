@@ -137,7 +137,10 @@ class GazeTracker:
 
             vertical_focused = (vertical_min < avg_vertical_ratio < vertical_max)
 
-            focused = horizontal_focused and vertical_focused
+            if avg_vertical_ratio < 0 or avg_vertical_ratio > 1:
+                focused = horizontal_focused
+            else:
+                focused = horizontal_focused and vertical_focused
 
             return focused
 
