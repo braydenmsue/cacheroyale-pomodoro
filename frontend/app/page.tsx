@@ -24,7 +24,7 @@ export default function Home() {
             Anti-Brainrot Pomodoro Timer
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Stay focused with adaptive break intervals powered by MediaPipe
+            Stay focused with adaptive break intervals
           </p>
         </header>
 

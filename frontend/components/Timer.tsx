@@ -182,9 +182,6 @@ export default function Timer({ sessionActive, isBreak, setSessionActive, onSess
 
         { !sessionActive && (
           <div className="mt-8 w-3/5 mx-auto">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Duration: {sliderMinutes} minute{sliderMinutes === 1 ? '' : 's'}
-            </label>
             <input
               type="range"
               min={0.25}
