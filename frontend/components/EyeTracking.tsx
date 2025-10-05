@@ -1,41 +1,48 @@
 
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
 
 interface EyeTrackingProps {
   sessionId: string | null
   isActive: boolean
   isPaused: boolean
+  onFocusChange: (isFocused: boolean) => void
 }
 
-export default function EyeTracking({ sessionId, isActive, isPaused }: EyeTrackingProps) {
+export default function EyeTracking({ sessionId, isActive, isPaused, onFocusChange }: EyeTrackingProps) {
   const [trackingActive, setTrackingActive] = useState(false)
   const [focusPercentage, setFocusPercentage] = useState(0)
   const [currentStatus, setCurrentStatus] = useState('Waiting...')
   const [socket, setSocket] = useState<Socket | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const onFocusChangeRef = useRef(onFocusChange)
+  useEffect(() => { onFocusChangeRef.current = onFocusChange }, [onFocusChange])
+
   useEffect(() => {
     const newSocket = io('http://localhost:5000')
     setSocket(newSocket)
+
+    const handleGaze = (data: { is_focused: boolean; focus_percentage: number }) => {
+      setCurrentStatus(data.is_focused ? 'Focused ✓' : 'Not Focused ✗')
+      setFocusPercentage(data.focus_percentage)
+      onFocusChangeRef.current(data.is_focused)
+    }
 
     newSocket.on('connect', () => {
       console.log('✅ WebSocket connected')
     })
 
-    newSocket.on('gaze_update', (data) => {
-      console.log('📊 Gaze update:', data)
-      setCurrentStatus(data.is_focused ? 'Focused ✓' : 'Not Focused ✗')
-      setFocusPercentage(data.focus_percentage)
-    })
+    newSocket.on('gaze_update', handleGaze)
 
     newSocket.on('connect_error', (err) => {
       console.error('❌ WebSocket connection error:', err)
     })
 
     return () => {
+      newSocket.off('gaze_update', handleGaze)
       newSocket.close()
     }
   }, [])
@@ -142,7 +149,11 @@ export default function EyeTracking({ sessionId, isActive, isPaused }: EyeTracki
               <div className="text-sm opacity-90">Focus Rate</div>
             </div>
 
-            <div className="text-center p-4 bg-gradient-to-br from-green-500 to-teal-600 rounded-lg text-white">
+            <div   className={`text-center p-4 rounded-lg text-white ${
+              currentStatus === 'Focused ✓'
+                ? 'bg-gradient-to-br from-green-500 to-teal-600'
+                : 'bg-gradient-to-br from-red-500 to-pink-600'
+            }`}>
               <div className="text-xl font-bold">{currentStatus}</div>
               <div className="text-sm opacity-90">Status</div>
             </div>

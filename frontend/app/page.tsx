@@ -11,6 +11,7 @@ export default function Home() {
   const [sessionActive, setSessionActive] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
+  const [isFocused, setIsFocused] = useState(false)
 
   console.log('Home render:', { sessionActive, sessionId }) // Debug log
 
@@ -27,7 +28,7 @@ export default function Home() {
         </header>
 
         <div className="space-y-8">
-          {/* Top row: Timer + Stats */}
+          {/* Top row: Timer + Mascot */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             <div className="lg:col-span-2 space-y-6">
               <Timer
@@ -40,21 +41,22 @@ export default function Home() {
                 sessionId={sessionId}
                 isActive={sessionActive}
                 isPaused={isPaused}
+                onFocusChange={setIsFocused}
               />
             </div>
 
             <div className="flex">
               <div className="flex-1">
-                <SessionStats />
+                <Mascot sessionActive={sessionActive} isFocused={isFocused} />
               </div>
             </div>
           </div>
 
-          {/* Bottom row: Mascot + Spotify */}
+          {/* Bottom row: Stats + Spotify */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             <div className="flex">
               <div className="flex-1">
-                <Mascot sessionActive={sessionActive} />
+                <SessionStats />
               </div>
             </div>
 

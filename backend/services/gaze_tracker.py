@@ -93,7 +93,7 @@ class GazeTracker:
             right_distance = np.linalg.norm(right_iris_center - right_eye_center)
 
             # If both irises are relatively centered, user is focused
-            threshold = 0.02  # Adjust based on testing
+            threshold = 0.008  # Adjust based on testing
             return left_distance < threshold and right_distance < threshold
 
         except Exception as e:
@@ -161,7 +161,7 @@ class GazeTracker:
 
             # Check if we should send update (every 5 seconds)
             current_time = time.time()
-            if current_time - self.last_check_time >= 5:
+            if current_time - self.last_check_time >= 1:
                 self.total_checks += 1
                 if is_focused:
                     self.focused_count += 1

@@ -81,6 +81,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
   const pauseTimer = () => {
     setIsRunning(false)
     onPausedChange?.(true)
+    setSessionActive(false)
   }
 
   const resetTimer = () => {
