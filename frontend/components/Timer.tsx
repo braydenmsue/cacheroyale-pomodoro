@@ -6,15 +6,17 @@ import { formatTime } from '@/utils/time'
 
 interface TimerProps {
   sessionActive: boolean
+  isBreak: boolean
   setSessionActive: (active: boolean) => void
   onSessionIdChange?: (id: string | null) => void
   onPausedChange?: (paused: boolean) => void
+  onBreakChange?: (isBreak: boolean) => void
 }
 
-export default function Timer({ sessionActive, setSessionActive, onSessionIdChange, onPausedChange, }: TimerProps) {
+export default function Timer({ sessionActive, isBreak, setSessionActive, onSessionIdChange, onPausedChange, onBreakChange }: TimerProps) {
   const [time, setTime] = useState(25 * 60)
   const [isRunning, setIsRunning] = useState(false)
-  const [isBreak, setIsBreak] = useState(false)
+  // const [isBreak, onBreakChange?.] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [recommendedBreak, setRecommendedBreak] = useState(5 * 60)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -37,23 +39,22 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
 
   const handleTimerComplete = async () => {
     setIsRunning(false)
-
     if (!isBreak && sessionId) {
       try {
         const response = await api.endSession(sessionId)
         const breakTime = await api.getRecommendedInterval(sessionId)
         setRecommendedBreak(breakTime)
         setTime(breakTime)
-        setIsBreak(true)
+        onBreakChange?.(true)
         onPausedChange?.(true)
         showNotification('Time for a break!', `Take a ${Math.round(breakTime / 60)} minute break`)
       } catch (error) {
         console.error('Error ending session:', error)
         setTime(5 * 60)
-        setIsBreak(true)
+        onBreakChange?.(true)
       }
     } else {
-      setIsBreak(false)
+      onBreakChange?.(false)
       setTime(25 * 60)
       setSessionActive(false)
       onPausedChange?.(false)
@@ -74,7 +75,8 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
           onSessionIdChange?.(response.session_id)
           onPausedChange?.(false)
         }
-        else{
+       
+      else{
         onPausedChange?.(true)
         }
         setIsRunning(true)
@@ -93,7 +95,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
 
   const resetTimer = () => {
     setIsRunning(false)
-    setIsBreak(false)
+    onBreakChange?.(false)
     setTime(25 * 60)
     setSessionActive(false)
     setSessionId(null)
@@ -103,7 +105,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
 
   const setTimer = (seconds: number) => {
     setTime(seconds)
-    setIsBreak(false)
+    onBreakChange?.(false)
     setIsRunning(false)
     setSessionActive(false)
     setSessionId(null)
@@ -186,7 +188,7 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
             </label>
             <input
               type="range"
-              min={1}
+              min={0.25}
               max={60}
               step={1}
               value={sliderMinutes}

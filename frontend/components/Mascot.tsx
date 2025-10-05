@@ -12,9 +12,10 @@ interface MascotProps {
   sessionActive: boolean
   isFocused: boolean
   isPaused: boolean
+  isBreak: boolean
 }
 
-export default function Mascot({ sessionActive, isFocused, isPaused }: MascotProps) {
+export default function Mascot({ sessionActive, isFocused, isPaused, isBreak }: MascotProps) {
   const [mood, setMood] = useState<'happy' | 'focused' | 'tired'>('happy')
   const [message, setMessage] = useState('Ready to work!')
   const [health, setHealth] = useState(100)
@@ -22,7 +23,7 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
 
   // Can adjust these values for difficulty
   const damageAmount = 10;
-  const healAmount = 5;
+  const healAmount = 1;
   const gracePeriod = 3000; // 3 seconds
 
   let unfocusedTimer: NodeJS.Timeout | null = null;
@@ -86,18 +87,20 @@ export default function Mascot({ sessionActive, isFocused, isPaused }: MascotPro
   }
 
   useEffect(() => {
-    if (health >= 50 && sessionActive) {
+    if (health >= 50 && sessionActive && !isBreak) {
       setMood('focused')
       setMessage('You\'re doing great! Stay focused!')
     } else if (health < 50 && sessionActive) {
       setMood('tired')
       setMessage('I\'m crashing out a little.... focus up!')
-    }
-    else {
+    } else if (isBreak) {
+      setMood('happy')
+      setMessage('Enjoy your break!')
+    } else {
       setMood('happy')
       setMessage('Ready to work!')
     }
-  }, [sessionActive, health])
+  }, [sessionActive, health, isBreak])
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col justify-center items-center text-center">

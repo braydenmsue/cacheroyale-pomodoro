@@ -12,6 +12,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+  const [isBreaked, setIsBreak] = useState(false)
 
   console.log('Home render:', { sessionActive, sessionId }) // Debug log
 
@@ -30,12 +31,15 @@ export default function Home() {
         <div className="space-y-8">
           {/* Top row: Timer + Mascot */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 flex flex-col h-full">
               <Timer
                 sessionActive={sessionActive}
+                isBreak={isBreaked}
                 setSessionActive={setSessionActive}
                 onSessionIdChange={setSessionId}
                 onPausedChange={setIsPaused}
+                onBreakChange={setIsBreak}
+
               />
               <EyeTracking
                 sessionId={sessionId}
@@ -47,7 +51,11 @@ export default function Home() {
 
             <div className="flex">
               <div className="flex-1">
-                <Mascot sessionActive={sessionActive} isFocused={isFocused} isPaused={isPaused} />
+                <Mascot
+                  sessionActive={sessionActive}
+                  isFocused={isFocused}
+                  isPaused={isPaused}
+                  isBreak={isBreaked} />
               </div>
             </div>
           </div>
