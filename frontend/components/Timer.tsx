@@ -90,7 +90,6 @@ export default function Timer({ sessionActive, isBreak, setSessionActive, onSess
   const pauseTimer = () => {
     setIsRunning(false)
     onPausedChange?.(true)
-    setSessionActive(false)
   }
 
   const resetTimer = () => {
