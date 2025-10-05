@@ -47,7 +47,7 @@ export default function Home() {
 
             <div className="flex">
               <div className="flex-1">
-                <Mascot sessionActive={sessionActive} isFocused={isFocused} />
+                <Mascot sessionActive={sessionActive} isFocused={isFocused} isPaused={isPaused} />
               </div>
             </div>
           </div>

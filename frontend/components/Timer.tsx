@@ -19,6 +19,8 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
   const [recommendedBreak, setRecommendedBreak] = useState(5 * 60)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
+  const sliderMinutes = Math.max(1, Math.min(60, Math.round(time / 60)))
+
   useEffect(() => {
     if (isRunning && time > 0) {
       intervalRef.current = setInterval(() => {
@@ -81,7 +83,6 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
   const pauseTimer = () => {
     setIsRunning(false)
     onPausedChange?.(true)
-    setSessionActive(false)
   }
 
   const resetTimer = () => {
@@ -92,6 +93,20 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
     setSessionId(null)
     onSessionIdChange?.(null)  // Notify parent
     onPausedChange?.(false)
+  }
+
+  const setTimer = (seconds: number) => {
+    setTime(seconds)
+    setIsBreak(false)
+    setIsRunning(false)
+    setSessionActive(false)
+    setSessionId(null)
+    onSessionIdChange?.(null)  // Notify parent
+    onPausedChange?.(false)
+  }
+
+  const handleSliderChange = (mins: number) => {
+    setTimer(mins * 60)
   }
 
   const showNotification = (title: string, body: string) => {
@@ -151,6 +166,24 @@ export default function Timer({ sessionActive, setSessionActive, onSessionIdChan
         {sessionId && (
           <div className="mt-4 text-xs text-gray-500">
             Session ID: {sessionId.substring(0, 8)}...
+          </div>
+        )}
+
+        { !sessionActive && (
+          <div className="mt-8 w-3/5 mx-auto">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Duration: {sliderMinutes} minute{sliderMinutes === 1 ? '' : 's'}
+            </label>
+            <input
+              type="range"
+              min={1}
+              max={60}
+              step={1}
+              value={sliderMinutes}
+              onChange={(e) => handleSliderChange(Number(e.target.value))}
+              disabled={isRunning}
+              className="w-full accent-indigo-600"
+            />
           </div>
         )}
       </div>

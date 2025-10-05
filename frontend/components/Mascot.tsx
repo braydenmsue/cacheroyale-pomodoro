@@ -8,9 +8,10 @@ import tiredMascot from '../assets/tired-capoo.gif'
 interface MascotProps {
   sessionActive: boolean
   isFocused: boolean
+  isPaused: boolean
 }
 
-export default function Mascot({ sessionActive, isFocused }: MascotProps) {
+export default function Mascot({ sessionActive, isFocused, isPaused }: MascotProps) {
   const [mood, setMood] = useState<'happy' | 'focused' | 'tired'>('happy')
   const [message, setMessage] = useState('Ready to work!')
   const [health, setHealth] = useState(100)
@@ -22,7 +23,7 @@ export default function Mascot({ sessionActive, isFocused }: MascotProps) {
   useEffect(() => {
     let healthInterval: NodeJS.Timeout;
 
-    if (sessionActive) {
+    if (sessionActive && !isPaused) {
       if (isFocused) {
         healthInterval = setInterval(() => {
           setHealth((prev) => Math.min(prev + healAmount, 100));
@@ -34,7 +35,7 @@ export default function Mascot({ sessionActive, isFocused }: MascotProps) {
       }
     }
     return () => clearInterval(healthInterval)
-  }, [sessionActive, isFocused])
+  }, [sessionActive, isFocused, isPaused])
 
   useEffect(() => {
     if (health === 0) {
