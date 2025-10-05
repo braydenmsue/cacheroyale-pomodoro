@@ -81,6 +81,47 @@ def init_db():
     conn.commit()
     conn.close()
 
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get user statistics"""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Total sessions
+    cursor.execute("SELECT COUNT(*) as total_sessions FROM sessions")
+    total_sessions = cursor.fetchone()['total_sessions']
+
+    # Total focus time
+    cursor.execute("SELECT SUM(duration) as total_focus_time FROM sessions")
+    total_focus_time = cursor.fetchone()['total_focus_time'] or 0
+
+    # Average session length
+    cursor.execute("SELECT AVG(duration) as avg_session FROM sessions")
+    avg_session = cursor.fetchone()['avg_session'] or 0
+
+    # Today’s sessions
+    today = datetime.now().date()
+    cursor.execute("SELECT COUNT(*) as today_sessions FROM sessions WHERE DATE(start_time) = ?", (today,))
+    today_sessions = cursor.fetchone()['today_sessions']
+
+    # average focus score per session
+    cursor.execute("SELECT AVG(eye_activity_score) as avg_focus_time FROM sessions")
+    avg_focus_score = cursor.fetchone()['avg_focus_time'] or 0
+
+    # best focus score
+    cursor.execute("SELECT MAX(eye_activity_score) as best_focus_score FROM sessions")
+    best_focus_score = cursor.fetchone()['best_focus_score'] or 0
+
+    conn.close()
+
+    return jsonify({
+        'totalSessions': total_sessions,
+        'totalFocusTime': total_focus_time,
+        'averageSession': round(avg_session / 60, 2),   # minutes
+        'todaySessions': today_sessions,
+        'averageFocusScore': round(avg_focus_score * 100, 2),  # percentage
+        'bestFocusScore': round(best_focus_score * 100, 2)  # percentage
+    })
 
 @app.route('/api/start_session', methods=['POST'])
 def start_session():

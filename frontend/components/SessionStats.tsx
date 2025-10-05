@@ -8,6 +8,8 @@ interface Stats {
   totalFocusTime: number
   averageSession: number
   todaySessions: number
+  averageFocusScore: number
+  bestFocusScore: number
 }
 
 export default function SessionStats() {
@@ -16,18 +18,24 @@ export default function SessionStats() {
     totalFocusTime: 0,
     averageSession: 0,
     todaySessions: 0,
+    averageFocusScore: 0,
+    bestFocusScore: 0
   })
 
   useEffect(() => {
-    // In a real app, fetch stats from backend
-    // For now, using placeholder data
-    setStats({
-      totalSessions: 0,
-      totalFocusTime: 0,
-      averageSession: 25,
-      todaySessions: 0,
-    })
-  }, [])
+    async function fetchStats() {
+      try {
+        const res = await fetch("http://localhost:5000/api/stats", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        setStats(data);
+      } catch (err) {
+        console.error("Failed to fetch stats:", err);
+      }
+    }
+    fetchStats();
+  }, []);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col">
@@ -56,6 +64,16 @@ export default function SessionStats() {
         <div className="flex justify-between items-center">
           <span className="text-gray-600 dark:text-gray-400">Avg Session:</span>
           <span className="text-2xl font-bold text-primary">{stats.averageSession}m</span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600 dark:text-gray-400">Avg Focus Score:</span>
+          <span className="text-2xl font-bold text-primary">{stats.averageFocusScore}%</span>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600 dark:text-gray-400">Best Focus Score:</span>
+          <span className="text-2xl font-bold text-primary">{stats.bestFocusScore}%</span>
         </div>
       </div>
     </div>
