@@ -7,10 +7,12 @@ import { formatTime } from '@/utils/time'
 interface TimerProps {
   sessionActive: boolean
   setSessionActive: (active: boolean) => void
+  onSessionIdChange?: (id: string | null) => void
+  onPausedChange?: (paused: boolean) => void
 }
 
-export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
-  const [time, setTime] = useState(25 * 60) // 25 minutes in seconds
+export default function Timer({ sessionActive, setSessionActive, onSessionIdChange, onPausedChange, }: TimerProps) {
+  const [time, setTime] = useState(25 * 60)
   const [isRunning, setIsRunning] = useState(false)
   const [isBreak, setIsBreak] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -33,9 +35,8 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
 
   const handleTimerComplete = async () => {
     setIsRunning(false)
-    
+
     if (!isBreak && sessionId) {
-      // Work session ended, start break
       try {
         const response = await api.endSession(sessionId)
         const breakTime = await api.getRecommendedInterval(sessionId)
@@ -45,14 +46,15 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
         showNotification('Time for a break!', `Take a ${Math.round(breakTime / 60)} minute break`)
       } catch (error) {
         console.error('Error ending session:', error)
-        setTime(5 * 60) // Default 5 min break
+        setTime(5 * 60)
         setIsBreak(true)
       }
     } else {
-      // Break ended
       setIsBreak(false)
       setTime(25 * 60)
       setSessionActive(false)
+      setSessionId(null)
+      onSessionIdChange?.(null)  // Notify parent
       showNotification('Break over!', 'Ready to focus again?')
     }
   }
@@ -62,10 +64,13 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
       try {
         if (!isBreak) {
           const response = await api.startSession()
+          console.log('Session started with ID:', response.session_id)  // Debug log
           setSessionId(response.session_id)
           setSessionActive(true)
+          onSessionIdChange?.(response.session_id)
         }
         setIsRunning(true)
+        onPausedChange?.(false)
       } catch (error) {
         console.error('Error starting session:', error)
         setIsRunning(true)
@@ -75,6 +80,7 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
 
   const pauseTimer = () => {
     setIsRunning(false)
+    onPausedChange?.(true)
   }
 
   const resetTimer = () => {
@@ -83,6 +89,8 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
     setTime(25 * 60)
     setSessionActive(false)
     setSessionId(null)
+    onSessionIdChange?.(null)  // Notify parent
+    onPausedChange?.(false)
   }
 
   const showNotification = (title: string, body: string) => {
@@ -103,7 +111,7 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
         <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-gray-200">
           {isBreak ? '☕ Break Time' : '🎯 Focus Session'}
         </h2>
-        
+
         <div className="text-8xl font-bold mb-8 text-gray-800 dark:text-white font-mono">
           {formatTime(time)}
         </div>
@@ -124,7 +132,7 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
               Pause
             </button>
           )}
-          
+
           <button
             onClick={resetTimer}
             className="px-8 py-4 bg-gray-500 text-white rounded-lg font-semibold text-lg hover:bg-gray-600 transition-colors shadow-lg"
@@ -134,10 +142,16 @@ export default function Timer({ sessionActive, setSessionActive }: TimerProps) {
         </div>
 
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {isBreak 
+          {isBreak
             ? `Recommended break: ${Math.round(recommendedBreak / 60)} minutes`
             : 'Standard work session: 25 minutes'}
         </div>
+
+        {sessionId && (
+          <div className="mt-4 text-xs text-gray-500">
+            Session ID: {sessionId.substring(0, 8)}...
+          </div>
+        )}
       </div>
     </div>
   )
