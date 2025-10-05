@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import focusedMascot from '../assets/capoo-capoo-type-transparent.gif'
+import happyMascot from '../assets/happy-capoo.gif'
+import tiredMascot from '../assets/tired-capoo.gif'
 
 interface MascotProps {
   sessionActive: boolean
@@ -20,29 +23,29 @@ export default function Mascot({ sessionActive }: MascotProps) {
     }
   }, [sessionActive])
 
-  const getMascotEmoji = () => {
+  const getMascotImg = () => {
     switch (mood) {
       case 'focused':
-        return '🧠'
+        return focusedMascot.src
       case 'tired':
-        return '😴'
+        return tiredMascot.src
       default:
-        return '😊'
+        return happyMascot.src
     }
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col justify-center">
-      <div className="text-center">
-        <div className="text-8xl mb-4 animate-bounce">
-          {getMascotEmoji()}
-        </div>
-        <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
-          {message}
-        </p>
-        <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          Your focus companion
-        </div>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 h-full flex flex-col justify-center items-center text-center">
+      <img 
+        src={getMascotImg()} 
+        alt="mascot" 
+        className="w-24 h-24 mb-4" 
+      />
+      <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
+        {message}
+      </p>
+      <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+        Your focus companion
       </div>
     </div>
   )
